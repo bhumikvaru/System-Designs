@@ -1,0 +1,32 @@
+const { Observable } = require("rxjs");
+
+// Creating an Observable that emits numbers every second
+const observable = new Observable((subscriber) => {
+  let count = 0;
+  const intervalId = setInterval(() => {
+    subscriber.next(count++); // Emit new value
+  }, 1000);
+
+  // Cleanup logic when the observer unsubscribes
+  return () => {
+    clearInterval(intervalId);
+    console.log("Observable stopped");
+  };
+});
+
+//Creating an Observable(subscriber)
+const subscription = observable.subscribe({
+  next(x) {
+    console.log("Recieved value: " + x);
+  },
+  error(err) {
+    console.log("Error: " + err);
+  },
+  complete() {
+    console.log("Completed");
+  },
+});
+
+setTimeout(() => {
+  subscription.unsubscribe();
+}, 5000);
