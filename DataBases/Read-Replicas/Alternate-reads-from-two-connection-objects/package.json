@@ -1,0 +1,16 @@
+{
+  "name": "dual-db",
+  "version": "1.0.0",
+  "description": "Nodejs app with two PostgreSQL databases",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Bhumik",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.1.0",
+    "nodemon": "^3.1.10",
+    "pg": "^8.16.0"
+  }
+}

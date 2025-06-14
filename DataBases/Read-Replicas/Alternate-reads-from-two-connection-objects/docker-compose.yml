@@ -1,0 +1,36 @@
+version: '3.8'
+services: 
+  db1:
+    image: postgres:latest
+    container_name: dual_db1
+    environment: 
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: testdb
+    ports:
+      - "5433:5432"
+    volumes:
+      - db1_data:/var/lib/postgresql/data
+      - ./init-db1.sql:/docker-entrypoint-initdb.d/init-db1.sql
+    networks:
+      - app-network
+  db2:
+    image: postgres:latest
+    container_name: dual_db2
+    environment: 
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: testdb
+    ports:
+    - "5434:5432"
+    volumes: 
+          - db2_data:/var/lib/postgresql/data
+          - ./init-db2.sql:/docker-entrypoint-initdb.d/init-db2.sql
+    networks:
+      - app-network
+networks:
+  app-network:
+    driver: bridge
+volumes:
+  db1_data:
+  db2_data:
