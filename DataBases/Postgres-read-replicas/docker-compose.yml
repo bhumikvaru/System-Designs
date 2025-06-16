@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  postgres-primary:
+    image: postgres:15
+    container_name: postgres-primary
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: mydb
+    ports:
+      - "5435:5432"
+    volumes:
+      - primary-data:/var/lib/postgresql/data
+      - ./init-primary.sql:/docker-entrypoint-initdb.d/init-primary.sql
+      - ./postgresql.conf:/etc/postgresql/postgresql.conf
+      - ./pg_hba.conf:/etc/postgresql/pg_hba.conf
+    command: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf", "-c", "hba_file=/etc/postgresql/pg_hba.conf"]
+    networks:
+      - db-network
+
+  postgres-replica:
+    image: postgres:15
+    container_name: postgres-replica
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: mydb
+    ports:
+      - "5436:5432"
+    volumes:
+      - replica-data:/var/lib/postgresql/data
+    depends_on:
+      - postgres-primary
+    networks:
+      - db-network
+    command: >
+      bash -c "
+      export PGPASSWORD=replicatorpass &&
+      until pg_isready -h postgres-primary -p 5432 -U admin; do
+        echo 'Waiting for primary...'
+        sleep 2
+      done &&
+      if [ ! -f /var/lib/postgresql/data/standby.signal ]; then
+        echo 'Setting up replica...'
+        rm -rf /var/lib/postgresql/data/* &&
+        pg_basebackup -h postgres-primary -D /var/lib/postgresql/data -U replicator -P --wal-method=stream &&
+        touch /var/lib/postgresql/data/standby.signal &&
+        echo \"primary_conninfo = 'host=postgres-primary port=5432 user=replicator password=replicatorpass'\" >> /var/lib/postgresql/data/postgresql.conf &&
+        echo \"recovery_target_timeline = 'latest'\" >> /var/lib/postgresql/data/postgresql.conf &&
+        chown -R postgres:postgres /var/lib/postgresql/data &&
+        chmod 700 /var/lib/postgresql/data
+      fi &&
+      exec gosu postgres postgres
+      "
+
+volumes:
+  primary-data:
+  replica-data:
+
+networks:
+  db-network:
+    driver: bridge
