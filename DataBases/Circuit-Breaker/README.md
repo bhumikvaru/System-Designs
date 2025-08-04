@@ -44,23 +44,6 @@ circuit-breaker-demo/
 
 ## Running the Application
 
-### Option 1: Docker Compose (Recommended)
-
-1. Clone the repository and navigate to the project directory:
-   ```bash
-   cd circuit-breaker-demo
-   ```
-
-2. Start the services:
-   ```bash
-   docker-compose up --build
-   ```
-
-3. The services will be available at:
-   - Post Service: http://localhost:3000
-   - Profile Service: http://localhost:3001
-
-### Option 2: Local Development
 
 1. Install dependencies for both services:
    ```bash
