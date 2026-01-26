@@ -1,0 +1,43 @@
+services:
+  postgres-primary:
+    image: postgres:16
+    container_name: ecommerce_primary
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: ecommerce
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./db/primary-data:/var/lib/postgresql/data
+      - ./db/primary-init/postgresql.conf:/etc/postgresql/postgresql.conf
+      - ./db/primary-init/pg_hba.conf:/etc/postgresql/pg_hba.conf
+      - ./db/primary-init/01_create_replicator.sql:/docker-entrypoint-initdb.d/01_create_replicator.sql
+    command: >
+      postgres -c config_file=/etc/postgresql/postgresql.conf
+              -c hba_file=/etc/postgresql/pg_hba.conf
+
+  postgres-replica:
+    image: postgres:16
+    container_name: ecommerce_replica
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: ecommerce
+    ports:
+      - "5433:5432"
+    depends_on:
+      - postgres-primary
+    volumes:
+      - ./db/replica-data:/var/lib/postgresql/data
+    command: >
+      bash -c "
+      until pg_isready -h postgres-primary -p 5432; do sleep 1; done;
+      rm -rf /var/lib/postgresql/data/*;
+      PGPASSWORD=repl_secret pg_basebackup -h postgres-primary -p 5432 -U replicator -D /var/lib/postgresql/data -Fp -Xs -P -R;
+      chown -R postgres:postgres /var/lib/postgresql/data;
+      chmod 700 /var/lib/postgresql/data;
+      exec su postgres -c 'postgres'
+      "
+
+
